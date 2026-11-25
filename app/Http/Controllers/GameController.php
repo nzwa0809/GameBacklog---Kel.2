@@ -639,7 +639,8 @@ class GameController extends Controller
     {
         return Excel::download(
             new UserLibraryExport($request->user()->id),
-            'my-personal-library.xlsx'
+            'my-personal-library.xls',
+            \Maatwebsite\Excel\Excel::XLS
         );
     }
 
