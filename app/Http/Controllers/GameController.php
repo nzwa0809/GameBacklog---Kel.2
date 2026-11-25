@@ -620,7 +620,7 @@ class GameController extends Controller
 
     public function exportExcel()
     {
-        return Excel::download(new GamesExport, 'katalog-game.csv');
+        return Excel::download(new GamesExport, 'katalog-game.xls', \Maatwebsite\Excel\Excel::XLS);
     }
 
     public function importExcel(Request $request)
