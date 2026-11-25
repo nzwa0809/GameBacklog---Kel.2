@@ -200,9 +200,7 @@ class PdfController extends Controller
      */
     private function toPdfText($text): string
     {
-        $converted = iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', (string) $text);
-
-        return $converted !== false ? $converted : '';
+        return mb_convert_encoding((string) $text, 'ISO-8859-1', 'UTF-8');
     }
 
     /**
