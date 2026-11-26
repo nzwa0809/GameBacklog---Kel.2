@@ -140,8 +140,8 @@
                         // Deteksi jenis gambar
                         if ($coverImage === '') {
                             $coverUrl = null;
-                        } elseif (filter_var($coverImage, FILTER_VALIDATE_URL)) {
-                            // Gambar dari RAWG API (URL eksternal)
+                        } elseif (str_starts_with($coverImage, 'data:image') || filter_var($coverImage, FILTER_VALIDATE_URL)) {
+                            // Gambar Base64 atau dari RAWG API (URL eksternal)
                             $coverUrl = $coverImage;
                         } elseif (str_starts_with($coverImage, '/storage/')) {
                             // Path yang sudah mengandung /storage/
