@@ -610,7 +610,7 @@
 
                                 $coverUrl = \Illuminate\Support\Str::startsWith(
                                     $game->cover_image,
-                                    ['http://', 'https://']
+                                    ['http://', 'https://', 'data:image']
                                 )
                                     ? $game->cover_image
                                     : asset('storage/' . $game->cover_image);
