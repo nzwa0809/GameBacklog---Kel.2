@@ -209,7 +209,7 @@ class GameController extends Controller
                 ->get()
                 ->map(function ($g) {
                     $cover = trim((string) ($g->cover_image ?? ''));
-                    if ($cover !== '' && !\Illuminate\Support\Str::startsWith($cover, ['http://', 'https://'])) {
+                    if ($cover !== '' && !\Illuminate\Support\Str::startsWith($cover, ['http://', 'https://', 'data:image'])) {
                         $cover = asset('storage/' . ltrim($cover, '/'));
                     }
                     return [
@@ -296,10 +296,10 @@ class GameController extends Controller
         $validated['description'] ?? null
         );
 
-        // Upload cover image jika tersedia
+        // Upload cover image jika tersedia (simpan sebagai Base64 agar permanen di Wasmer)
         if ($request->hasFile('cover_image')) {
-            $validated['cover_image'] = $request->file('cover_image')
-                ->store('covers', 'public');
+            $file = $request->file('cover_image');
+            $validated['cover_image'] = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
         }
 
         // Menyimpan data game
@@ -571,8 +571,8 @@ class GameController extends Controller
 
         // Upload cover baru jika pengguna memilih gambar
         if ($request->hasFile('cover_image')) {
-            $validated['cover_image'] = $request->file('cover_image')
-                ->store('covers', 'public');
+            $file = $request->file('cover_image');
+            $validated['cover_image'] = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
         }
 
         // Memperbarui data game
@@ -581,8 +581,8 @@ class GameController extends Controller
         // Memperbarui relasi platform
         $game->platforms()->sync($platformIds);
 
-        // Menghapus cover lama jika diganti
-        if ($request->hasFile('cover_image') && $oldCover) {
+        // Menghapus cover lama jika berupa file lokal
+        if ($request->hasFile('cover_image') && $oldCover && !\Illuminate\Support\Str::startsWith($oldCover, ['http://', 'https://', 'data:image'])) {
             Storage::disk('public')->delete($oldCover);
         }
 
@@ -608,8 +608,8 @@ class GameController extends Controller
         // 4. Menghapus data game dari database
         $game->delete();
 
-        // 5. Menghapus file cover jika tersedia
-        if ($coverImage) {
+        // 5. Menghapus file cover jika berupa file lokal
+        if ($coverImage && !\Illuminate\Support\Str::startsWith($coverImage, ['http://', 'https://', 'data:image'])) {
             Storage::disk('public')->delete($coverImage);
         }
 
