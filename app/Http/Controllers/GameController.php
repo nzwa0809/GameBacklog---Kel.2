@@ -434,12 +434,29 @@ class GameController extends Controller
         ];
         $periodText = $periodLabels[$period] ?? 'hari ini';
 
+        // Top 5 Players (Most Played & Pencapaian Tertinggi)
+        $topPlayers = User::query()
+            ->where('role', 'user')
+            ->withSum('userGames', 'playtime')
+            ->withCount([
+                'userGames as total_games',
+                'userGames as completed_games' => function ($q) {
+                    $q->where('status', 'Completed');
+                },
+            ])
+            ->orderByDesc('user_games_sum_playtime')
+            ->orderByDesc('completed_games')
+            ->orderByDesc('total_games')
+            ->limit(5)
+            ->get();
+
         return view('dashboard', compact(
             'user',
             'period',
             'periodText',
             'genreDistribution',
-            'topPopularGames'
+            'topPopularGames',
+            'topPlayers'
         ));
     }
 
