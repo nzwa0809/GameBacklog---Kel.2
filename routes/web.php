@@ -182,3 +182,12 @@ Route::post('/rawg-game/{id}/add', [
 ])
 ->middleware('auth')
 ->name('rawg.add');
+
+use Illuminate\Support\Facades\Storage;
+
+Route::get('/storage/{path}', function ($path) {
+    if (!Storage::disk('public')->exists($path)) {
+        abort(404);
+    }
+    return Storage::disk('public')->response($path);
+})->where('path', '.*');
