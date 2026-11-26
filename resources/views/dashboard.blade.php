@@ -153,6 +153,74 @@
                 </div>
 
             </div>
+            <!-- Most Played / Top Players Leaderboard -->
+            <div class="dashboard-account" id="most-played-section" style="margin-top: 24px;">
+
+                <div class="dashboard-section-heading">
+                    <h3>Most Played · Top Players</h3>
+                    <span>LEADERBOARD</span>
+                </div>
+
+                <div class="dashboard-info-item" style="display: block; padding: 20px;">
+                    <p style="margin: 0 0 14px 0; font-size: 13px; color: #94a3b8;">
+                        Peringkat pemain dengan total jam bermain (<strong style="color: #38bdf8;">Playtime</strong>) dan penyelesaian game (<strong style="color: #38bdf8;">Completed</strong>) tertinggi.
+                    </p>
+
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(88, 207, 255, 0.2); color: #94a3b8; font-size: 11px; letter-spacing: 0.05em;">
+                                    <th style="padding: 10px 8px; width: 70px;">RANK</th>
+                                    <th style="padding: 10px 8px;">PLAYER</th>
+                                    <th style="padding: 10px 8px; text-align: center;">COMPLETED</th>
+                                    <th style="padding: 10px 8px; text-align: center;">KOLEKSI</th>
+                                    <th style="padding: 10px 8px; text-align: right;">TOTAL PLAYTIME</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($topPlayers ?? [] as $index => $player)
+                                    @php
+                                        $medal = match($index) {
+                                            0 => '🥇 #1',
+                                            1 => '🥈 #2',
+                                            2 => '🥉 #3',
+                                            default => '#' . ($index + 1),
+                                        };
+                                        $hours = (int) ($player->user_games_sum_playtime ?? 0);
+                                    @endphp
+                                    <tr style="border-bottom: 1px solid rgba(88, 207, 255, 0.1); {{ $player->id === Auth::id() ? 'background: rgba(56, 189, 248, 0.08);' : '' }}">
+                                        <td style="padding: 12px 8px; font-weight: 700; color: #38bdf8;">
+                                            {{ $medal }}
+                                        </td>
+                                        <td style="padding: 12px 8px; font-weight: 600;">
+                                            {{ $player->name }}
+                                            @if ($player->id === Auth::id())
+                                                <span style="margin-left: 6px; padding: 2px 8px; border-radius: 999px; font-size: 10px; background: rgba(56, 189, 248, 0.2); color: #38bdf8;">You</span>
+                                            @endif
+                                        </td>
+                                        <td style="padding: 12px 8px; text-align: center; font-weight: 600; color: #4ade80;">
+                                            {{ $player->completed_games }} Game
+                                        </td>
+                                        <td style="padding: 12px 8px; text-align: center; color: #94a3b8;">
+                                            {{ $player->total_games }} Game
+                                        </td>
+                                        <td style="padding: 12px 8px; text-align: right; font-weight: 700; color: #38bdf8;">
+                                            {{ number_format($hours) }} Jam
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" style="padding: 20px 8px; text-align: center; color: #94a3b8;">
+                                            Belum ada data aktivitas bermain dari user.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
 
 
             <!-- Admin Analytics (Admin Only) -->
