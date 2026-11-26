@@ -16,6 +16,7 @@ use App\Models\Genre;
 use App\Models\Platform;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class GameController extends Controller
 {
@@ -164,6 +165,42 @@ class GameController extends Controller
         }
 
         return $result;
+    }
+    private function recordUserActivity(?int $userId, string $action, string $description): void
+    {
+        if (!$userId) {
+            return;
+        }
+
+        try {
+            if (Schema::hasTable('activity_logs')) {
+                $data = [
+                    'user_id'    => $userId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+                if (Schema::hasColumn('activity_logs', 'action')) {
+                    $data['action'] = $action;
+                }
+                if (Schema::hasColumn('activity_logs', 'activity')) {
+                    $data['activity'] = $description;
+                }
+                if (Schema::hasColumn('activity_logs', 'description')) {
+                    $data['description'] = $description;
+                }
+                if (Schema::hasColumn('activity_logs', 'details')) {
+                    $data['details'] = $description;
+                }
+                if (Schema::hasColumn('activity_logs', 'ip_address')) {
+                    $data['ip_address'] = request()->ip();
+                }
+
+                DB::table('activity_logs')->insert($data);
+            }
+        } catch (\Throwable $e) {
+            // Abaikan error log agar aksi utama tetap berjalan
+        }
     }
     /**
 - Display a listing of the resource.
@@ -351,6 +388,7 @@ class GameController extends Controller
             'priority'    => null,
             'added_at'    => now()->toDateString(),
         ]);
+        $this->recordUserActivity($user->id, 'Add Library', 'Menambahkan "' . $game->title . '" ke Personal Library');
 
         return back()->with('success', 'Game berhasil ditambahkan ke Personal Library!');
     }
@@ -450,13 +488,120 @@ class GameController extends Controller
             ->limit(5)
             ->get();
 
+        // Monitoring User Login & Tracking Kegiatan User (Khusus Admin)
+        $monitoredUsers = collect();
+        $onlineCount = 0;
+        $userActivityLogs = collect();
+
+        if ($user->role === 'admin') {
+            $activeSessions = collect();
+            try {
+                if (Schema::hasTable('sessions')) {
+                    $activeSessions = DB::table('sessions')
+                        ->whereNotNull('user_id')
+                        ->select('user_id', DB::raw('MAX(last_activity) as last_activity'), DB::raw('MAX(ip_address) as ip_address'))
+                        ->groupBy('user_id')
+                        ->get()
+                        ->keyBy('user_id');
+                }
+            } catch (\Throwable $e) {
+                $activeSessions = collect();
+            }
+
+            $onlineThreshold = now()->subMinutes(15)->timestamp;
+
+            $monitoredUsers = User::query()
+                ->withCount('userGames')
+                ->withSum('userGames', 'playtime')
+                ->orderByDesc('role')
+                ->orderBy('name')
+                ->get()
+                ->map(function ($u) use ($activeSessions, $onlineThreshold) {
+                    $session = $activeSessions->get($u->id);
+                    $lastActivityTs = $session ? (int) $session->last_activity : null;
+                    $isOnline = $lastActivityTs !== null && $lastActivityTs >= $onlineThreshold;
+
+                    $u->is_online = $isOnline;
+                    $u->last_seen_text = $lastActivityTs
+                        ? \Carbon\Carbon::createFromTimestamp($lastActivityTs)->diffForHumans()
+                        : 'Belum ada sesi aktif';
+                    $u->ip_address = $session->ip_address ?? '-';
+
+                    return $u;
+                })
+                ->sortByDesc('is_online')
+                ->values();
+
+            $onlineCount = $monitoredUsers->where('is_online', true)->count();
+
+            // Ambil log dari tabel activity_logs
+            try {
+                if (Schema::hasTable('activity_logs')) {
+                    $rawLogs = DB::table('activity_logs')
+                        ->leftJoin('users', 'activity_logs.user_id', '=', 'users.id')
+                        ->select('activity_logs.*', 'users.name as user_name', 'users.role as user_role')
+                        ->orderByDesc('activity_logs.created_at')
+                        ->limit(15)
+                        ->get();
+
+                    foreach ($rawLogs as $row) {
+                        $desc = $row->description ?? $row->activity ?? $row->details ?? ($row->action ?? 'Melakukan aktivitas');
+                        $userActivityLogs->push([
+                            'user_name'  => $row->user_name ?? 'User #' . $row->user_id,
+                            'user_role'  => $row->user_role ?? 'user',
+                            'action'     => $row->action ?? 'Activity',
+                            'activity'   => $desc,
+                            'ip_address' => $row->ip_address ?? '-',
+                            'time_ago'   => $row->created_at ? \Carbon\Carbon::parse($row->created_at)->diffForHumans() : '-',
+                            'timestamp'  => $row->created_at ? \Carbon\Carbon::parse($row->created_at)->timestamp : 0,
+                        ]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Abaikan jika kolom berbeda
+            }
+
+            // Lengkapi dengan riwayat nyata dari tabel user_games agar histori lama tetap terbaca
+            $recentLibraryActivities = UserGame::query()
+                ->with(['user', 'game'])
+                ->orderByDesc('updated_at')
+                ->limit(10)
+                ->get();
+
+            foreach ($recentLibraryActivities as $ug) {
+                $isUpdated = $ug->updated_at && $ug->created_at && $ug->updated_at->gt($ug->created_at->copy()->addSeconds(5));
+                $gameTitle = optional($ug->game)->title ?? 'Game';
+                $activityText = $isUpdated
+                    ? 'Update "' . $gameTitle . '" → Status: ' . $ug->status . ' (' . ($ug->playtime ?? 0) . ' jam)'
+                    : 'Menambahkan "' . $gameTitle . '" ke Personal Library (' . $ug->status . ')';
+
+                $userActivityLogs->push([
+                    'user_name'  => optional($ug->user)->name ?? 'User',
+                    'user_role'  => optional($ug->user)->role ?? 'user',
+                    'action'     => $isUpdated ? 'Update Library' : 'Add Library',
+                    'activity'   => $activityText,
+                    'ip_address' => '-',
+                    'time_ago'   => $ug->updated_at ? $ug->updated_at->diffForHumans() : '-',
+                    'timestamp'  => $ug->updated_at ? $ug->updated_at->timestamp : 0,
+                ]);
+            }
+
+            $userActivityLogs = $userActivityLogs
+                ->sortByDesc('timestamp')
+                ->take(15)
+                ->values();
+        }
+
         return view('dashboard', compact(
             'user',
             'period',
             'periodText',
             'genreDistribution',
             'topPopularGames',
-            'topPlayers'
+            'topPlayers',
+            'monitoredUsers',
+            'onlineCount',
+            'userActivityLogs'
         ));
     }
 
@@ -518,6 +663,8 @@ class GameController extends Controller
 
         // Memperbarui data koleksi
         $userGame->update($validated);
+        $gameTitle = optional($userGame->game)->title ?? 'Game';
+        $this->recordUserActivity($request->user()->id, 'Update Library', 'Memperbarui "' . $gameTitle . '" (Status: ' . $validated['status'] . ', Playtime: ' . $validated['playtime'] . ' jam)');
 
         return redirect()->route('games.library')
             ->with('success', 'Personal Library berhasil diperbarui!');
@@ -529,6 +676,8 @@ class GameController extends Controller
         $userGame = auth()->user()
             ->userGames()
             ->findOrFail($id);
+        $gameTitle = optional($userGame->game)->title ?? 'Game';
+        $this->recordUserActivity(auth()->id(), 'Remove Library', 'Menghapus "' . $gameTitle . '" dari Personal Library');
 
         // Menghapus data dari Personal Library
         $userGame->delete();
@@ -671,6 +820,7 @@ class GameController extends Controller
             new UserLibraryImport($request->user()->id),
             $request->file('file')
         );
+        $this->recordUserActivity($request->user()->id, 'Import Library', 'Mengimpor daftar koleksi Personal Library via Excel');
 
         return redirect()->route('games.library')
             ->with('success', 'Koleksi Personal Library berhasil diimpor dari Excel!');
