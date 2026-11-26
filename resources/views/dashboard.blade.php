@@ -300,6 +300,123 @@
                     </div>
 
                 </div>
+            <!-- Card 3: User Login & Online Status Monitor -->
+                    <div class="dashboard-info-item" style="display: block; padding: 20px; margin-top: 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                            <h4 style="margin: 0; font-size: 16px; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+                                <span>🟢</span> Daftar User & Status Login
+                            </h4>
+                            <span style="padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.4);">
+                                {{ $onlineCount ?? 0 }} Sedang Online / {{ ($monitoredUsers ?? collect())->count() }} Total Akun
+                            </span>
+                        </div>
+
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid rgba(88, 207, 255, 0.2); color: #94a3b8; font-size: 11px; letter-spacing: 0.05em;">
+                                        <th style="padding: 10px 8px;">NAMA USER</th>
+                                        <th style="padding: 10px 8px;">ROLE</th>
+                                        <th style="padding: 10px 8px;">STATUS LOGIN</th>
+                                        <th style="padding: 10px 8px;">AKTIVITAS TERAKHIR</th>
+                                        <th style="padding: 10px 8px; text-align: right;">KOLEKSI / PLAYTIME</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($monitoredUsers ?? [] as $mu)
+                                        <tr style="border-bottom: 1px solid rgba(88, 207, 255, 0.1);">
+                                            <td style="padding: 11px 8px;">
+                                                <div style="font-weight: 600;">{{ $mu->name }}</div>
+                                                <div style="font-size: 11px; color: #94a3b8;">{{ $mu->email }}</div>
+                                            </td>
+                                            <td style="padding: 11px 8px;">
+                                                <span style="padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; {{ $mu->role === 'admin' ? 'background: rgba(250, 204, 21, 0.15); color: #facc15;' : 'background: rgba(56, 189, 248, 0.15); color: #38bdf8;' }}">
+                                                    {{ $mu->role }}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 11px 8px;">
+                                                @if ($mu->is_online)
+                                                    <span style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: rgba(74, 222, 128, 0.18); color: #4ade80;">
+                                                        ● Online
+                                                    </span>
+                                                @else
+                                                    <span style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; background: rgba(148, 163, 184, 0.15); color: #94a3b8;">
+                                                        ○ Offline
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td style="padding: 11px 8px; color: #cbd5e1; font-size: 12px;">
+                                                {{ $mu->last_seen_text }}
+                                                @if ($mu->ip_address !== '-')
+                                                    <span style="display: block; font-size: 10px; color: #64748b;">IP: {{ $mu->ip_address }}</span>
+                                                @endif
+                                            </td>
+                                            <td style="padding: 11px 8px; text-align: right; font-weight: 600; color: #38bdf8;">
+                                                {{ $mu->user_games_count }} Game · {{ number_format((int) ($mu->user_games_sum_playtime ?? 0)) }} Jam
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" style="padding: 20px 8px; text-align: center; color: #94a3b8;">
+                                                Belum ada data pengguna terdaftar.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Tracking Kegiatan User (Recent Activity Logs) -->
+                    <div class="dashboard-info-item" style="display: block; padding: 20px; margin-top: 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                            <h4 style="margin: 0; font-size: 16px; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+                                <span>🕵️</span> Tracking Kegiatan User Terbaru
+                            </h4>
+                            <span style="font-size: 11px; color: #94a3b8;">
+                                Menampilkan 15 aktivitas terbaru
+                            </span>
+                        </div>
+
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid rgba(88, 207, 255, 0.2); color: #94a3b8; font-size: 11px; letter-spacing: 0.05em;">
+                                        <th style="padding: 10px 8px;">USER</th>
+                                        <th style="padding: 10px 8px; width: 130px;">AKSI</th>
+                                        <th style="padding: 10px 8px;">DETAIL KEGIATAN</th>
+                                        <th style="padding: 10px 8px; text-align: right; width: 140px;">WAKTU</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($userActivityLogs ?? [] as $log)
+                                        <tr style="border-bottom: 1px solid rgba(88, 207, 255, 0.1);">
+                                            <td style="padding: 11px 8px; font-weight: 600;">
+                                                {{ $log['user_name'] }}
+                                            </td>
+                                            <td style="padding: 11px 8px;">
+                                                <span style="padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
+                                                    {{ $log['action'] }}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 11px 8px; color: #e2e8f0;">
+                                                {{ $log['activity'] }}
+                                            </td>
+                                            <td style="padding: 11px 8px; text-align: right; color: #94a3b8; font-size: 12px;">
+                                                {{ $log['time_ago'] }}
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" style="padding: 20px 8px; text-align: center; color: #94a3b8;">
+                                                Belum ada riwayat aktivitas user yang tercatat.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
             @endif
 
 
