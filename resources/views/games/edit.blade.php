@@ -237,11 +237,20 @@
 
                     @if ($game->cover_image)
 
+                        @php
+                            $currentCover = \Illuminate\Support\Str::startsWith(
+                                $game->cover_image,
+                                ['http://', 'https://', 'data:image']
+                            )
+                                ? $game->cover_image
+                                : asset('storage/' . $game->cover_image);
+                        @endphp
+
                         <div class="wii-current-cover">
 
                             <p>Cover saat ini:</p>
 
-                            <img src="{{ asset('storage/' . $game->cover_image) }}"
+                            <img src="{{ $currentCover }}"
                                  alt="Cover {{ $game->title }}">
 
                         </div>
