@@ -74,10 +74,10 @@
 
                     if (\Illuminate\Support\Str::startsWith(
                         $game->cover_image,
-                        ['http://', 'https://']
+                        ['http://', 'https://', 'data:image']
                     )) {
 
-                        // Cover dari RAWG API
+                        // Cover dari RAWG API atau Base64
                         $coverUrl = $game->cover_image;
 
                     } else {
