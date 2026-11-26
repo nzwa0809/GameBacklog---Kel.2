@@ -283,9 +283,6 @@
     <!-- Theme Switcher & Admin Genre Chart -->
     <script>
 
-        <!-- Theme Switcher & Admin Genre Chart -->
-    <script>
-
         document.addEventListener('DOMContentLoaded', function () {
 
             // Toggle My Account Information
