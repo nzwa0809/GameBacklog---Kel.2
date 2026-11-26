@@ -84,12 +84,8 @@
                 </a>
 
 
-                <div class="dashboard-menu-card account-card"
-                     id="toggle-account-card"
-                     role="button"
-                     tabindex="0"
-                     aria-expanded="false"
-                     style="cursor: pointer;">
+                <a href="{{ route('account') }}"
+                   class="dashboard-menu-card account-card">
 
                     <div class="dashboard-menu-icon">
                         👤
@@ -100,9 +96,9 @@
                         <p>View your account information</p>
                     </div>
 
-                    <span class="dashboard-arrow" id="account-card-arrow" style="transition: transform 0.2s ease;">›</span>
+                    <span class="dashboard-arrow">›</span>
 
-                </div>
+                </a>
 
 
                 <a href="{{ route('recommendations') }}"
@@ -124,35 +120,6 @@
 
             </div>
 
-
-            <!-- Account Information -->
-            <div class="dashboard-account" id="account-info-panel" style="display: none;">
-
-                <div class="dashboard-section-heading">
-                    <h3>Account Information</h3>
-                    <span>PROFILE</span>
-                </div>
-
-                <div class="dashboard-info-grid">
-
-                    <div class="dashboard-info-item">
-                        <span>Full Name</span>
-                        <strong>{{ Auth::user()->name }}</strong>
-                    </div>
-
-                    <div class="dashboard-info-item">
-                        <span>Email Address</span>
-                        <strong>{{ Auth::user()->email }}</strong>
-                    </div>
-
-                    <div class="dashboard-info-item">
-                        <span>Account Role</span>
-                        <strong>{{ Auth::user()->role }}</strong>
-                    </div>
-
-                </div>
-
-            </div>
             <!-- Most Played / Top Players Leaderboard -->
             <div class="dashboard-account" id="most-played-section" style="margin-top: 24px;">
 
