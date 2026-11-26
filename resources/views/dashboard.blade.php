@@ -84,7 +84,12 @@
                 </a>
 
 
-                <div class="dashboard-menu-card account-card">
+                <div class="dashboard-menu-card account-card"
+                     id="toggle-account-card"
+                     role="button"
+                     tabindex="0"
+                     aria-expanded="false"
+                     style="cursor: pointer;">
 
                     <div class="dashboard-menu-icon">
                         👤
@@ -95,7 +100,7 @@
                         <p>View your account information</p>
                     </div>
 
-                    <span class="dashboard-arrow">›</span>
+                    <span class="dashboard-arrow" id="account-card-arrow" style="transition: transform 0.2s ease;">›</span>
 
                 </div>
 
@@ -121,7 +126,7 @@
 
 
             <!-- Account Information -->
-            <div class="dashboard-account">
+            <div class="dashboard-account" id="account-info-panel" style="display: none;">
 
                 <div class="dashboard-section-heading">
                     <h3>Account Information</h3>
@@ -278,7 +283,37 @@
     <!-- Theme Switcher & Admin Genre Chart -->
     <script>
 
+        <!-- Theme Switcher & Admin Genre Chart -->
+    <script>
+
         document.addEventListener('DOMContentLoaded', function () {
+
+            // Toggle My Account Information
+            const accountCard = document.getElementById('toggle-account-card');
+            const accountPanel = document.getElementById('account-info-panel');
+            const accountArrow = document.getElementById('account-card-arrow');
+
+            if (accountCard && accountPanel) {
+                const toggleAccountPanel = function () {
+                    const isHidden = accountPanel.style.display === 'none';
+                    accountPanel.style.display = isHidden ? 'block' : 'none';
+                    accountCard.setAttribute('aria-expanded', String(isHidden));
+                    if (accountArrow) {
+                        accountArrow.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+                    }
+                    if (isHidden) {
+                        accountPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                };
+
+                accountCard.addEventListener('click', toggleAccountPanel);
+                accountCard.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleAccountPanel();
+                    }
+                });
+            }
 
             const themeToggle =
                 document.getElementById('wii-theme-toggle');
