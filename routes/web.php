@@ -56,6 +56,10 @@ Route::middleware('auth')->group(function () {
         return view('recommendations');
     })->name('recommendations');
 
+    // Halaman My Account
+    Route::get('/my-account', function () {
+        return view('account');
+    })->name('account');
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])
